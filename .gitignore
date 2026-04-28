@@ -41,3 +41,7 @@ Thumbs.db
 # JetBrains
 .idea/
 *.sln.iml
+
+# Claude Code
+.claude/
+*-local-command-caveat*.txt
