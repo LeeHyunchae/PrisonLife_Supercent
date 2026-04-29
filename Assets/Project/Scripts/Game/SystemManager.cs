@@ -30,7 +30,6 @@ namespace PrisonLife.Game
         [SerializeField] float initialPlayerMoveSpeed = 5f;
 
         [Header("Player Initial Mining Stats (Stage 0 — 곡괭이)")]
-        private int initialMiningPower = 1;
         private float initialMiningSwingDurationSeconds = 0.7f;
         private int initialMiningHitsPerSwing = 1;
         private float initialMiningRangeWidth = 1.0f;
@@ -83,7 +82,6 @@ namespace PrisonLife.Game
             var inventory = new InventoryModel(initialCapacities);
             var model = new PlayerModel(inventory);
             model.MoveSpeed.Value = initialPlayerMoveSpeed;
-            model.MiningPower.Value = initialMiningPower;
             model.MiningSwingDurationSeconds.Value = initialMiningSwingDurationSeconds;
             model.MiningHitsPerSwing.Value = initialMiningHitsPerSwing;
             model.MiningRangeWidth.Value = initialMiningRangeWidth;

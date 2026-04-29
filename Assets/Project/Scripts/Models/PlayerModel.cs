@@ -7,7 +7,6 @@ namespace PrisonLife.Models
         public ReactiveProperty<float> MoveSpeed { get; } = new(5f);
         public ReactiveProperty<int> WeaponUpgradeStage { get; } = new(0);
 
-        public ReactiveProperty<int> MiningPower { get; } = new(1);
         public ReactiveProperty<float> MiningSwingDurationSeconds { get; } = new(0.7f);
         public ReactiveProperty<int> MiningHitsPerSwing { get; } = new(1);
         public ReactiveProperty<float> MiningRangeWidth { get; } = new(1.0f);

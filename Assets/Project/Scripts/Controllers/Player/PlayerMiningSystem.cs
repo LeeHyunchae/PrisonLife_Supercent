@@ -107,14 +107,12 @@ namespace PrisonLife.Controllers.Player
             });
 
             int hitsToApply = Mathf.Min(_maxHitsForThisSwing, impactSortBuffer.Count);
-            int miningPower = playerModel.MiningPower.Value;
 
             for (int i = 0; i < hitsToApply; i++)
             {
                 if (playerModel.Inventory.IsAtCapacity(ResourceType.Ore)) break;
 
-                bool rockDepleted = impactSortBuffer[i].TryApplyMiningDamage(miningPower);
-                if (rockDepleted)
+                if (impactSortBuffer[i].TryDeplete())
                 {
                     playerModel.Inventory.TryAdd(ResourceType.Ore, 1);
                 }
