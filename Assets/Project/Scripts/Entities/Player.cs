@@ -10,7 +10,7 @@ using UnityEngine.AI;
 namespace PrisonLife.Entities
 {
     [RequireComponent(typeof(NavMeshAgent))]
-    public class Player : MonoBehaviour
+    public class Player : MonoBehaviour, IInventoryHolder
     {
         [Header("Input / Animation")]
         [SerializeField] FloatingJoystick floatingJoystick;
@@ -20,10 +20,13 @@ namespace PrisonLife.Entities
         [SerializeField] PlayerMiningRange miningRange;
         [SerializeField] Transform weaponAnchor;
         [SerializeField] Transform backStackAnchor;
+        [SerializeField] Transform handStackAnchor;
 
         [Header("Stack Visuals")]
         [SerializeField] GameObject oreStackItemPrefab;
         [SerializeField] Vector3 oreStackOffsetStep = new Vector3(0f, 0.4f, 0f);
+        [SerializeField] GameObject handcuffStackItemPrefab;
+        [SerializeField] Vector3 handcuffStackOffsetStep = new Vector3(0f, 0.18f, 0f);
 
         [Header("Movement Tuning")]
         [SerializeField] float rotationLerpRate = 15f;
@@ -35,6 +38,9 @@ namespace PrisonLife.Entities
         PlayerMovementSystem movementSystem;
         PlayerMiningSystem miningSystem;
         StackVisualizer oreStackVisualizer;
+        StackVisualizer handcuffStackVisualizer;
+
+        public InventoryModel Inventory => playerModel?.Inventory;
 
         void Awake()
         {
@@ -52,12 +58,18 @@ namespace PrisonLife.Entities
             navMeshMover = new NavMeshMover(navMeshAgent, transform, rotationLerpRate);
             movementSystem = new PlayerMovementSystem(playerModel, navMeshMover);
             miningSystem = new PlayerMiningSystem(playerModel, miningRange, weaponAnchor, characterAnimator);
+
             oreStackVisualizer = new StackVisualizer(
-                playerModel.Inventory,
-                ResourceType.Ore,
+                playerModel.Inventory.ObserveCount(ResourceType.Ore),
                 backStackAnchor,
                 oreStackItemPrefab,
                 oreStackOffsetStep);
+
+            handcuffStackVisualizer = new StackVisualizer(
+                playerModel.Inventory.ObserveCount(ResourceType.Handcuff),
+                handStackAnchor,
+                handcuffStackItemPrefab,
+                handcuffStackOffsetStep);
         }
 
         void Update()
@@ -83,6 +95,8 @@ namespace PrisonLife.Entities
             miningSystem = null;
             oreStackVisualizer?.Dispose();
             oreStackVisualizer = null;
+            handcuffStackVisualizer?.Dispose();
+            handcuffStackVisualizer = null;
             movementSystem = null;
             navMeshMover = null;
         }
