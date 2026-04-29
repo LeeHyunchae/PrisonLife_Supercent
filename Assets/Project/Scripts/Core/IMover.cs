@@ -9,6 +9,7 @@ namespace PrisonLife.Core
         Vector3 CurrentPosition { get; }
         bool HasArrivedAtDestination { get; }
         void SetVelocity(Vector3 _velocityWorldSpace);
+        void SetDestination(Vector3 _targetWorldPosition);
         void StopImmediately();
         UniTask MoveToAsync(Vector3 _targetWorldPosition, CancellationToken _cancellationToken = default);
     }

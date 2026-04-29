@@ -27,6 +27,7 @@ namespace PrisonLife.Movement
             {
                 if (navMeshAgent == null) return true;
                 if (navMeshAgent.pathPending) return false;
+                if (!navMeshAgent.hasPath) return false;
                 return navMeshAgent.remainingDistance <= navMeshAgent.stoppingDistance;
             }
         }
@@ -48,6 +49,14 @@ namespace PrisonLife.Movement
 
             navMeshAgent.Move(_velocityWorldSpace * Time.deltaTime);
             ApplyRotationTowardsDirection(_velocityWorldSpace);
+        }
+
+        public void SetDestination(Vector3 _targetWorldPosition)
+        {
+            if (navMeshAgent == null) return;
+            if (!navMeshAgent.isOnNavMesh) return;
+            navMeshAgent.ResetPath();
+            navMeshAgent.SetDestination(_targetWorldPosition);
         }
 
         public void StopImmediately()
