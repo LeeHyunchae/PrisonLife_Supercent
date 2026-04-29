@@ -1,5 +1,6 @@
 using PrisonLife.Controllers.Player;
 using PrisonLife.Core;
+using PrisonLife.Game;
 using PrisonLife.Input;
 using PrisonLife.Models;
 using PrisonLife.Movement;
@@ -22,10 +23,8 @@ namespace PrisonLife.Entities
         [SerializeField] Transform backStackAnchor;
         [SerializeField] Transform handStackAnchor;
 
-        [Header("Stack Visuals")]
-        [SerializeField] GameObject oreStackItemPrefab;
+        [Header("Stack Offset (per-context)")]
         [SerializeField] Vector3 oreStackOffsetStep = new Vector3(0f, 0.4f, 0f);
-        [SerializeField] GameObject handcuffStackItemPrefab;
         [SerializeField] Vector3 handcuffStackOffsetStep = new Vector3(0f, 0.18f, 0f);
 
         [Header("Movement Tuning")]
@@ -59,16 +58,18 @@ namespace PrisonLife.Entities
             movementSystem = new PlayerMovementSystem(playerModel, navMeshMover);
             miningSystem = new PlayerMiningSystem(playerModel, miningRange, weaponAnchor, characterAnimator);
 
+            var registry = SystemManager.Instance != null ? SystemManager.Instance.ResourceItems : null;
+
             oreStackVisualizer = new StackVisualizer(
                 playerModel.Inventory.ObserveCount(ResourceType.Ore),
                 backStackAnchor,
-                oreStackItemPrefab,
+                registry != null ? registry.GetPrefab(ResourceType.Ore) : null,
                 oreStackOffsetStep);
 
             handcuffStackVisualizer = new StackVisualizer(
                 playerModel.Inventory.ObserveCount(ResourceType.Handcuff),
                 handStackAnchor,
-                handcuffStackItemPrefab,
+                registry != null ? registry.GetPrefab(ResourceType.Handcuff) : null,
                 handcuffStackOffsetStep);
         }
 

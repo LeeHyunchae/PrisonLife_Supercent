@@ -1,3 +1,5 @@
+using PrisonLife.Core;
+using PrisonLife.Game;
 using PrisonLife.Models;
 using PrisonLife.View.World;
 using UnityEngine;
@@ -21,10 +23,8 @@ namespace PrisonLife.Facilities
         [SerializeField] Transform oreStackAnchor;
         [SerializeField] Transform handcuffStackAnchor;
 
-        [Header("Stack Prefabs")]
-        [SerializeField] GameObject oreStackItemPrefab;
+        [Header("Stack Offset (per-context)")]
         [SerializeField] Vector3 oreStackOffsetStep = new Vector3(0f, 0.25f, 0f);
-        [SerializeField] GameObject handcuffStackItemPrefab;
         [SerializeField] Vector3 handcuffStackOffsetStep = new Vector3(0f, 0.18f, 0f);
 
         public HandcuffContainerModel Model { get; private set; }
@@ -46,16 +46,18 @@ namespace PrisonLife.Facilities
             if (oreInputZone != null) oreInputZone.Init(Model.OreSink);
             if (handcuffOutputZone != null) handcuffOutputZone.Init(Model.HandcuffSource);
 
+            var registry = SystemManager.Instance != null ? SystemManager.Instance.ResourceItems : null;
+
             oreStockVisualizer = new StackVisualizer(
                 Model.StoredOreCount,
                 oreStackAnchor,
-                oreStackItemPrefab,
+                registry != null ? registry.GetPrefab(ResourceType.Ore) : null,
                 oreStackOffsetStep);
 
             handcuffStockVisualizer = new StackVisualizer(
                 Model.ProducedHandcuffCount,
                 handcuffStackAnchor,
-                handcuffStackItemPrefab,
+                registry != null ? registry.GetPrefab(ResourceType.Handcuff) : null,
                 handcuffStackOffsetStep);
 
             productionSystem = new HandcuffProductionSystem(Model, destroyCancellationToken);

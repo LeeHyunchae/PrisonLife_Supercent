@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PrisonLife.Configs;
 using PrisonLife.Core;
 using PrisonLife.Entities;
 using PrisonLife.Managers;
@@ -11,6 +12,9 @@ namespace PrisonLife.Game
     public class SystemManager : MonoBehaviour
     {
         public static SystemManager Instance { get; private set; }
+
+        [Header("Configs (Inspector)")]
+        [SerializeField] ResourceItemRegistry resourceItemRegistry;
 
         [Header("MonoBehaviour Managers (Inspector)")]
         [SerializeField] PoolManager poolManager;
@@ -35,6 +39,7 @@ namespace PrisonLife.Game
         public PoolManager Pool => poolManager;
         public NavManager Nav => navManager;
         public ItemFlowManager ItemFlow { get; private set; }
+        public ResourceItemRegistry ResourceItems => resourceItemRegistry;
 
         public WalletModel Wallet { get; private set; }
         public PrisonStateModel Prison { get; private set; }
