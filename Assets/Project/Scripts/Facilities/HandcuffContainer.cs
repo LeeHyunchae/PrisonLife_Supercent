@@ -15,19 +15,16 @@ namespace PrisonLife.Facilities
         [Header("Production")]
         [SerializeField, Min(0.05f)] float initialProductionPeriodSeconds = 1.0f;
 
-        [Header("Zones (자식 prefab)")]
+        [Header("Zones (자식 prefab — stack 시각도 zone 위치에 쌓임)")]
         [SerializeField] ResourceInputZone oreInputZone;
         [SerializeField] ResourceOutputZone handcuffOutputZone;
 
-        [Header("Stack Anchors (자식)")]
-        [SerializeField] Transform oreStackAnchor;
-        [SerializeField] Transform handcuffStackAnchor;
-
-        [Header("Stack Offset (per-context)")]
+        [Header("Stack Offset")]
         [SerializeField] Vector3 oreStackOffsetStep = new Vector3(0f, 0.25f, 0f);
         [SerializeField] Vector3 handcuffStackOffsetStep = new Vector3(0f, 0.18f, 0f);
 
-        public HandcuffContainerModel Model { get; private set; }
+        public StockpileModel OreStockpile { get; private set; }
+        public StockpileModel HandcuffStockpile { get; private set; }
 
         HandcuffProductionSystem productionSystem;
         StackVisualizer oreStockVisualizer;
@@ -35,32 +32,40 @@ namespace PrisonLife.Facilities
 
         void Awake()
         {
-            Model = new HandcuffContainerModel();
-            Model.MaxOreStorage.Value = initialMaxOreStorage;
-            Model.MaxHandcuffStorage.Value = initialMaxHandcuffStorage;
-            Model.ProductionPeriodSeconds.Value = initialProductionPeriodSeconds;
+            OreStockpile = new StockpileModel(ResourceType.Ore, initialMaxOreStorage);
+            HandcuffStockpile = new StockpileModel(ResourceType.Handcuff, initialMaxHandcuffStorage);
         }
 
         void Start()
         {
-            if (oreInputZone != null) oreInputZone.Init(Model.OreSink);
-            if (handcuffOutputZone != null) handcuffOutputZone.Init(Model.HandcuffSource);
+            if (oreInputZone != null) oreInputZone.Init(OreStockpile.Sink);
+            if (handcuffOutputZone != null) handcuffOutputZone.Init(HandcuffStockpile.Source);
 
             var registry = SystemManager.Instance != null ? SystemManager.Instance.ResourceItems : null;
 
-            oreStockVisualizer = new StackVisualizer(
-                Model.StoredOreCount,
-                oreStackAnchor,
-                registry != null ? registry.GetPrefab(ResourceType.Ore) : null,
-                oreStackOffsetStep);
+            if (oreInputZone != null)
+            {
+                oreStockVisualizer = new StackVisualizer(
+                    OreStockpile.Count,
+                    oreInputZone.transform,
+                    registry != null ? registry.GetPrefab(ResourceType.Ore) : null,
+                    oreStackOffsetStep);
+            }
 
-            handcuffStockVisualizer = new StackVisualizer(
-                Model.ProducedHandcuffCount,
-                handcuffStackAnchor,
-                registry != null ? registry.GetPrefab(ResourceType.Handcuff) : null,
-                handcuffStackOffsetStep);
+            if (handcuffOutputZone != null)
+            {
+                handcuffStockVisualizer = new StackVisualizer(
+                    HandcuffStockpile.Count,
+                    handcuffOutputZone.transform,
+                    registry != null ? registry.GetPrefab(ResourceType.Handcuff) : null,
+                    handcuffStackOffsetStep);
+            }
 
-            productionSystem = new HandcuffProductionSystem(Model, destroyCancellationToken);
+            productionSystem = new HandcuffProductionSystem(
+                OreStockpile,
+                HandcuffStockpile,
+                initialProductionPeriodSeconds,
+                destroyCancellationToken);
             productionSystem.Start();
         }
 
