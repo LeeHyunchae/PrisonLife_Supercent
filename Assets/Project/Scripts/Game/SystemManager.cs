@@ -15,6 +15,7 @@ namespace PrisonLife.Game
 
         [Header("Configs (Inspector)")]
         [SerializeField] ResourceItemRegistry resourceItemRegistry;
+        [SerializeField] PlayerStatsConfigSO playerStatsConfig;
 
         [Header("MonoBehaviour Managers (Inspector)")]
         [SerializeField] PoolManager poolManager;
@@ -24,21 +25,16 @@ namespace PrisonLife.Game
         [SerializeField] Player playerEntity;
 
         [Header("Player Initial Stats")]
-        [SerializeField] int initialOreCapacity = 10;
         [SerializeField] int initialMoneyCapacity = 30;
         [SerializeField] int initialHandcuffCapacity = 6;
         [SerializeField] float initialPlayerMoveSpeed = 5f;
-
-        [Header("Player Initial Mining Stats (Stage 0 — 곡괭이)")]
-        private float initialMiningSwingDurationSeconds = 0.7f;
-        private int initialMiningHitsPerSwing = 1;
-        private float initialMiningRangeWidth = 1.0f;
-        private float initialMiningRangeDepth = 1.0f;
 
         public PoolManager Pool => poolManager;
         public NavManager Nav => navManager;
         public ItemFlowManager ItemFlow { get; private set; }
         public ResourceItemRegistry ResourceItems => resourceItemRegistry;
+        public PlayerStatsConfigSO PlayerStats => playerStatsConfig;
+        public Player PlayerEntity => playerEntity;
 
         public WalletModel Wallet { get; private set; }
         public PrisonStateModel Prison { get; private set; }
@@ -72,6 +68,22 @@ namespace PrisonLife.Game
 
         PlayerModel CreatePlayerModel()
         {
+            // Ore 한도/스윙/타격/박스 등 무기 단계 의존 스탯은 Stage 0 데이터에서 가져온다.
+            int initialOreCapacity = 10;
+            float initialSwingDuration = 0.7f;
+            int initialHitsPerSwing = 1;
+            float initialRangeWidth = 1.0f;
+            float initialRangeDepth = 1.0f;
+
+            if (playerStatsConfig != null && playerStatsConfig.TryGetStage(0, out var stage0))
+            {
+                initialOreCapacity = stage0.oreCapacity;
+                initialSwingDuration = stage0.swingDurationSeconds;
+                initialHitsPerSwing = stage0.hitsPerSwing;
+                initialRangeWidth = stage0.miningRangeWidth;
+                initialRangeDepth = stage0.miningRangeDepth;
+            }
+
             var initialCapacities = new Dictionary<ResourceType, int>
             {
                 { ResourceType.Ore, initialOreCapacity },
@@ -82,10 +94,10 @@ namespace PrisonLife.Game
             var inventory = new InventoryModel(initialCapacities);
             var model = new PlayerModel(inventory);
             model.MoveSpeed.Value = initialPlayerMoveSpeed;
-            model.MiningSwingDurationSeconds.Value = initialMiningSwingDurationSeconds;
-            model.MiningHitsPerSwing.Value = initialMiningHitsPerSwing;
-            model.MiningRangeWidth.Value = initialMiningRangeWidth;
-            model.MiningRangeDepth.Value = initialMiningRangeDepth;
+            model.MiningSwingDurationSeconds.Value = initialSwingDuration;
+            model.MiningHitsPerSwing.Value = initialHitsPerSwing;
+            model.MiningRangeWidth.Value = initialRangeWidth;
+            model.MiningRangeDepth.Value = initialRangeDepth;
             return model;
         }
 

@@ -41,6 +41,7 @@ namespace PrisonLife.Entities
         StackVisualizer oreStackVisualizer;
         StackVisualizer handcuffStackVisualizer;
         StackVisualizer moneyStackVisualizer;
+        GameObject currentWeaponVisualInstance;
 
         public InventoryModel Inventory => playerModel?.Inventory;
 
@@ -92,6 +93,21 @@ namespace PrisonLife.Entities
 
             movementSystem.Tick(joystickInput);
             miningSystem.Tick(Time.deltaTime);
+        }
+
+        public void SetWeaponVisual(GameObject _weaponPrefab)
+        {
+            if (currentWeaponVisualInstance != null)
+            {
+                Destroy(currentWeaponVisualInstance);
+                currentWeaponVisualInstance = null;
+            }
+
+            if (_weaponPrefab == null || weaponAnchor == null) return;
+
+            currentWeaponVisualInstance = Instantiate(_weaponPrefab, weaponAnchor);
+            currentWeaponVisualInstance.transform.localPosition = Vector3.zero;
+            currentWeaponVisualInstance.transform.localRotation = Quaternion.identity;
         }
 
         void OnDestroy()
