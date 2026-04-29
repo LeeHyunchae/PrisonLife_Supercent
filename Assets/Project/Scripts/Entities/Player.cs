@@ -22,10 +22,12 @@ namespace PrisonLife.Entities
         [SerializeField] Transform weaponAnchor;
         [SerializeField] Transform backStackAnchor;
         [SerializeField] Transform handStackAnchor;
+        [SerializeField] Transform moneyStackAnchor;
 
         [Header("Stack Offset (per-context)")]
         [SerializeField] Vector3 oreStackOffsetStep = new Vector3(0f, 0.4f, 0f);
         [SerializeField] Vector3 handcuffStackOffsetStep = new Vector3(0f, 0.18f, 0f);
+        [SerializeField] Vector3 moneyStackOffsetStep = new Vector3(0f, 0.1f, 0f);
 
         [Header("Movement Tuning")]
         [SerializeField] float rotationLerpRate = 15f;
@@ -38,6 +40,7 @@ namespace PrisonLife.Entities
         PlayerMiningSystem miningSystem;
         StackVisualizer oreStackVisualizer;
         StackVisualizer handcuffStackVisualizer;
+        StackVisualizer moneyStackVisualizer;
 
         public InventoryModel Inventory => playerModel?.Inventory;
 
@@ -71,6 +74,12 @@ namespace PrisonLife.Entities
                 handStackAnchor,
                 registry != null ? registry.GetPrefab(ResourceType.Handcuff) : null,
                 handcuffStackOffsetStep);
+
+            moneyStackVisualizer = new StackVisualizer(
+                playerModel.Inventory.ObserveCount(ResourceType.Money),
+                moneyStackAnchor,
+                registry != null ? registry.GetPrefab(ResourceType.Money) : null,
+                moneyStackOffsetStep);
         }
 
         void Update()
@@ -98,6 +107,8 @@ namespace PrisonLife.Entities
             oreStackVisualizer = null;
             handcuffStackVisualizer?.Dispose();
             handcuffStackVisualizer = null;
+            moneyStackVisualizer?.Dispose();
+            moneyStackVisualizer = null;
             movementSystem = null;
             navMeshMover = null;
         }
