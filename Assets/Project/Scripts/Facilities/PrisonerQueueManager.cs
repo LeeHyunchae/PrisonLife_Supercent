@@ -8,24 +8,24 @@ namespace PrisonLife.Facilities
     public class PrisonerQueueManager : MonoBehaviour
     {
         [Header("Spawn / Layout")]
-        [SerializeField] Prisoner prisonerPrefab;
-        [SerializeField] Transform spawnPoint;
-        [SerializeField] Transform[] queueSlots;
-        [SerializeField] Transform prisonCellPoint;
+        [SerializeField] private Prisoner prisonerPrefab;
+        [SerializeField] private Transform spawnPoint;
+        [SerializeField] private Transform[] queueSlots;
+        [SerializeField] private Transform prisonCellPoint;
 
-        [Header("Process Zone (자식 prefab — Resource Type=Handcuff)")]
-        [SerializeField] ResourceInputZone handcuffDeliveryZone;
+        [Header("Process Zone (자식 — PrisonerProcessZone 컴포넌트, 버퍼 포함)")]
+        [SerializeField] private PrisonerProcessZone handcuffDeliveryZone;
 
         [Header("Prisoner Config")]
-        [SerializeField, Min(1)] int minRequiredHandcuffs = 1;
-        [SerializeField, Min(1)] int maxRequiredHandcuffs = 4;
+        [SerializeField, Min(1)] private int minRequiredHandcuffs = 1;
+        [SerializeField, Min(1)] private int maxRequiredHandcuffs = 4;
 
         [Header("Money Output")]
-        [SerializeField] MoneyOutput moneyOutput;
-        [SerializeField, Min(1)] int moneyPerProcessedPrisoner = 1;
+        [SerializeField] private MoneyOutput moneyOutput;
+        [SerializeField, Min(1)] private int moneyPerProcessedPrisoner = 1;
 
-        Prisoner[] prisonersInSlots;
-        IResourceSink headPrisonerHandcuffSink;
+        private Prisoner[] prisonersInSlots;
+        private IResourceSink headPrisonerHandcuffSink;
 
         public Prisoner GetFrontPrisoner()
         {
@@ -33,12 +33,12 @@ namespace PrisonLife.Facilities
             return prisonersInSlots[0];
         }
 
-        void Awake()
+        private void Awake()
         {
             headPrisonerHandcuffSink = new HeadPrisonerHandcuffSink(this);
         }
 
-        void Start()
+        private void Start()
         {
             if (queueSlots == null || queueSlots.Length == 0)
             {
@@ -58,7 +58,7 @@ namespace PrisonLife.Facilities
             }
         }
 
-        void SpawnPrisonerForSlot(int _slotIndex)
+        private void SpawnPrisonerForSlot(int _slotIndex)
         {
             if (prisonerPrefab == null || spawnPoint == null) return;
             if (_slotIndex < 0 || _slotIndex >= queueSlots.Length) return;
@@ -73,7 +73,7 @@ namespace PrisonLife.Facilities
             prisonersInSlots[_slotIndex] = instance;
         }
 
-        void HandlePrisonerFullyProcessed(Prisoner _prisoner)
+        private void HandlePrisonerFullyProcessed(Prisoner _prisoner)
         {
             if (prisonersInSlots == null) return;
 
@@ -98,7 +98,7 @@ namespace PrisonLife.Facilities
             }
         }
 
-        void HandlePrisonerEnteredCell(Prisoner _prisoner)
+        private void HandlePrisonerEnteredCell(Prisoner _prisoner)
         {
             if (_prisoner == null) return;
 
@@ -113,16 +113,20 @@ namespace PrisonLife.Facilities
             Destroy(_prisoner.gameObject);
         }
 
-        sealed class HeadPrisonerHandcuffSink : IResourceSink
+        private sealed class HeadPrisonerHandcuffSink : IResourceSink
         {
-            readonly PrisonerQueueManager owner;
+            private readonly PrisonerQueueManager owner;
+
             public HeadPrisonerHandcuffSink(PrisonerQueueManager _owner) { owner = _owner; }
+
             public ResourceType InputType => ResourceType.Handcuff;
+
             public bool CanAcceptOne()
             {
                 var head = owner.GetFrontPrisoner();
                 return head != null && head.CanReceiveHandcuff;
             }
+
             public bool TryAcceptOne()
             {
                 var head = owner.GetFrontPrisoner();
