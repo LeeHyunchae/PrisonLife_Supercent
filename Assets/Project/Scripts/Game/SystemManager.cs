@@ -26,7 +26,7 @@ namespace PrisonLife.Game
 
         [Header("Player Initial Stats")]
         [SerializeField] private int initialMoneyCapacity = 30;
-        [SerializeField] private int initialHandcuffCapacity = 6;
+        [SerializeField] private int initialHandcuffCapacity = 20;
         [SerializeField] private float initialPlayerMoveSpeed = 5f;
 
         public PoolManager Pool => poolManager;

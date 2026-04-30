@@ -22,7 +22,7 @@ namespace PrisonLife.Entities
         [SerializeField] private Vector3 handcuffStackOffsetStep = new Vector3(0f, 0.18f, 0f);
 
         [Header("Capacity")]
-        [SerializeField, Min(1)] private int handcuffCapacity = 6;
+        [SerializeField, Min(1)] private int handcuffCapacity = 10;
 
         [Header("Movement Tuning")]
         [SerializeField] private float rotationLerpRate = 15f;
