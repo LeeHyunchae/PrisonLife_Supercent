@@ -14,20 +14,20 @@ namespace PrisonLife.Game
         public static SystemManager Instance { get; private set; }
 
         [Header("Configs (Inspector)")]
-        [SerializeField] ResourceItemRegistry resourceItemRegistry;
-        [SerializeField] PlayerStatsConfigSO playerStatsConfig;
+        [SerializeField] private ResourceItemRegistry resourceItemRegistry;
+        [SerializeField] private PlayerStatsConfigSO playerStatsConfig;
 
         [Header("MonoBehaviour Managers (Inspector)")]
-        [SerializeField] PoolManager poolManager;
-        [SerializeField] NavManager navManager;
+        [SerializeField] private PoolManager poolManager;
+        [SerializeField] private NavManager navManager;
 
         [Header("Scene Player (Inspector)")]
-        [SerializeField] Player playerEntity;
+        [SerializeField] private Player playerEntity;
 
         [Header("Player Initial Stats")]
-        [SerializeField] int initialMoneyCapacity = 30;
-        [SerializeField] int initialHandcuffCapacity = 6;
-        [SerializeField] float initialPlayerMoveSpeed = 5f;
+        [SerializeField] private int initialMoneyCapacity = 30;
+        [SerializeField] private int initialHandcuffCapacity = 6;
+        [SerializeField] private float initialPlayerMoveSpeed = 5f;
 
         public PoolManager Pool => poolManager;
         public NavManager Nav => navManager;
@@ -36,12 +36,11 @@ namespace PrisonLife.Game
         public PlayerStatsConfigSO PlayerStats => playerStatsConfig;
         public Player PlayerEntity => playerEntity;
 
-        public WalletModel Wallet { get; private set; }
         public PrisonStateModel Prison { get; private set; }
         public GameStateModel GameState { get; private set; }
         public PlayerModel PlayerModel { get; private set; }
 
-        void Awake()
+        private void Awake()
         {
             if (Instance != null && Instance != this)
             {
@@ -50,7 +49,6 @@ namespace PrisonLife.Game
             }
             Instance = this;
 
-            Wallet = new WalletModel();
             Prison = new PrisonStateModel();
             GameState = new GameStateModel();
             ItemFlow = new ItemFlowManager(poolManager);
@@ -58,7 +56,7 @@ namespace PrisonLife.Game
             PlayerModel = CreatePlayerModel();
         }
 
-        void Start()
+        private void Start()
         {
             // 의존성 주입은 Start 에서. Awake 단계에서 호출하면
             // 대상 엔티티들의 Awake (예: Player 의 NavMeshAgent 캐싱) 가 아직 안 돈 상태여서
@@ -66,7 +64,7 @@ namespace PrisonLife.Game
             InjectPlayer();
         }
 
-        PlayerModel CreatePlayerModel()
+        private PlayerModel CreatePlayerModel()
         {
             // Ore 한도/스윙/타격/박스 등 무기 단계 의존 스탯은 Stage 0 데이터에서 가져온다.
             int initialOreCapacity = 10;
@@ -101,7 +99,7 @@ namespace PrisonLife.Game
             return model;
         }
 
-        void InjectPlayer()
+        private void InjectPlayer()
         {
             if (playerEntity == null)
             {
@@ -111,7 +109,7 @@ namespace PrisonLife.Game
             playerEntity.Init(PlayerModel);
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             if (Instance == this) Instance = null;
         }
