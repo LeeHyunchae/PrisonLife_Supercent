@@ -110,6 +110,10 @@ namespace PrisonLife.Facilities
             if (transferAccumulator < transferIntervalSeconds) return;
             transferAccumulator = 0f;
 
+            // holder (플레이어 / 죄수 일꾼) 가 zone 에 1명 이상 있어야 어떤 transfer 도 일어남.
+            // 비어있으면 buffer 가 차있어도 죄수가 그냥 대기.
+            if (holdersInZone.Count == 0) return;
+
             bool sinkReady = downstreamSink.CanAcceptOne();
 
             if (sinkReady)
