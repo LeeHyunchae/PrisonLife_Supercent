@@ -14,38 +14,42 @@ namespace PrisonLife.Entities
     public class Player : MonoBehaviour, IInventoryHolder
     {
         [Header("Input / Animation")]
-        [SerializeField] FloatingJoystick floatingJoystick;
-        [SerializeField] Animator characterAnimator;
+        [SerializeField] private FloatingJoystick floatingJoystick;
+        [SerializeField] private Animator characterAnimator;
 
         [Header("Children")]
-        [SerializeField] PlayerMiningRange miningRange;
-        [SerializeField] Transform weaponAnchor;
-        [SerializeField] Transform backStackAnchor;
-        [SerializeField] Transform handStackAnchor;
-        [SerializeField] Transform moneyStackAnchor;
+        [SerializeField] private PlayerMiningRange miningRange;
+        [SerializeField] private Transform weaponAnchor;
+        [SerializeField] private Transform backStackAnchor;
+        [SerializeField] private Transform handStackAnchor;
+        [SerializeField] private Transform moneyStackAnchor;
 
         [Header("Stack Offset (per-context)")]
-        [SerializeField] Vector3 oreStackOffsetStep = new Vector3(0f, 0.4f, 0f);
-        [SerializeField] Vector3 handcuffStackOffsetStep = new Vector3(0f, 0.18f, 0f);
-        [SerializeField] Vector3 moneyStackOffsetStep = new Vector3(0f, 0.1f, 0f);
+        [SerializeField] private Vector3 oreStackOffsetStep = new Vector3(0f, 0.4f, 0f);
+        [SerializeField] private Vector3 handcuffStackOffsetStep = new Vector3(0f, 0.18f, 0f);
+        [SerializeField] private Vector3 moneyStackOffsetStep = new Vector3(0f, 0.1f, 0f);
 
         [Header("Movement Tuning")]
-        [SerializeField] float rotationLerpRate = 15f;
+        [SerializeField] private float rotationLerpRate = 15f;
 
-        NavMeshAgent navMeshAgent;
-        PlayerModel playerModel;
+        private NavMeshAgent navMeshAgent;
+        private PlayerModel playerModel;
 
-        NavMeshMover navMeshMover;
-        PlayerMovementSystem movementSystem;
-        PlayerMiningSystem miningSystem;
-        StackVisualizer oreStackVisualizer;
-        StackVisualizer handcuffStackVisualizer;
-        StackVisualizer moneyStackVisualizer;
-        GameObject currentWeaponVisualInstance;
+        private NavMeshMover navMeshMover;
+        private PlayerMovementSystem movementSystem;
+        private PlayerMiningSystem miningSystem;
+        private PlayerWeaponSystem weaponSystem;
+        private StackVisualizer oreStackVisualizer;
+        private StackVisualizer handcuffStackVisualizer;
+        private StackVisualizer moneyStackVisualizer;
+
+        private GameObject currentWeaponVisualInstance;
+        private bool isWeaponCurrentlyVisible;
 
         public InventoryModel Inventory => playerModel?.Inventory;
+        public Transform WeaponAnchor => weaponAnchor;
 
-        void Awake()
+        private void Awake()
         {
             navMeshAgent = GetComponent<NavMeshAgent>();
             navMeshAgent.updateRotation = false;
@@ -60,9 +64,14 @@ namespace PrisonLife.Entities
 
             navMeshMover = new NavMeshMover(navMeshAgent, transform, rotationLerpRate);
             movementSystem = new PlayerMovementSystem(playerModel, navMeshMover);
-            miningSystem = new PlayerMiningSystem(playerModel, miningRange, weaponAnchor, characterAnimator);
+            miningSystem = new PlayerMiningSystem(playerModel, miningRange, this, characterAnimator);
 
-            var registry = SystemManager.Instance != null ? SystemManager.Instance.ResourceItems : null;
+            var systemManager = SystemManager.Instance;
+            var registry = systemManager != null ? systemManager.ResourceItems : null;
+            var statsConfig = systemManager != null ? systemManager.PlayerStats : null;
+
+            // PlayerWeaponSystem 은 Subscribe 즉시 fire 로 stage 0 데이터(곡괭이) 를 즉시 적용한다.
+            weaponSystem = new PlayerWeaponSystem(playerModel, this, statsConfig);
 
             oreStackVisualizer = new StackVisualizer(
                 playerModel.Inventory.ObserveCount(ResourceType.Ore),
@@ -83,7 +92,7 @@ namespace PrisonLife.Entities
                 moneyStackOffsetStep);
         }
 
-        void Update()
+        private void Update()
         {
             if (playerModel == null) return;
 
@@ -108,17 +117,29 @@ namespace PrisonLife.Entities
             currentWeaponVisualInstance = Instantiate(_weaponPrefab, weaponAnchor);
             currentWeaponVisualInstance.transform.localPosition = Vector3.zero;
             currentWeaponVisualInstance.transform.localRotation = Quaternion.identity;
+            currentWeaponVisualInstance.SetActive(isWeaponCurrentlyVisible);
         }
 
-        void OnDestroy()
+        public void SetWeaponVisible(bool _visible)
+        {
+            isWeaponCurrentlyVisible = _visible;
+            if (currentWeaponVisualInstance != null)
+            {
+                currentWeaponVisualInstance.SetActive(_visible);
+            }
+        }
+
+        private void OnDestroy()
         {
             DisposeSubsystems();
         }
 
-        void DisposeSubsystems()
+        private void DisposeSubsystems()
         {
             miningSystem?.Dispose();
             miningSystem = null;
+            weaponSystem?.Dispose();
+            weaponSystem = null;
             oreStackVisualizer?.Dispose();
             oreStackVisualizer = null;
             handcuffStackVisualizer?.Dispose();

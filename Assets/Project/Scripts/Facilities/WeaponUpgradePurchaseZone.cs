@@ -1,30 +1,31 @@
-using PrisonLife.Core;
 using PrisonLife.Game;
-using PrisonLife.Models;
-using PrisonLife.Reactive;
 using UnityEngine;
 
 namespace PrisonLife.Facilities
 {
     /// <summary>
     /// 무기 강화 구매칸. 같은 GameObject 의 PurchaseZone 과 합쳐 동작.
-    /// SystemManager.PlayerStats (PlayerStatsConfigSO) 를 기준으로 PlayerModel.WeaponUpgradeStage 변화 → 단계 데이터 적용.
-    /// 구매 완료 → 다음 단계로 stage 증가 → 다음 단계 비용으로 PurchaseZone 리셋. 더 이상 단계가 없으면 GameObject 비활성.
+    /// 책임: 다음 단계 비용을 PurchaseZone 에 세팅 + 구매 완료 시 PlayerModel.WeaponUpgradeStage 증가.
+    /// 단계 데이터 적용 (스탯/visual) 은 PlayerWeaponSystem 이 stage RP 구독으로 처리한다.
     /// </summary>
     [RequireComponent(typeof(PurchaseZone))]
     public class WeaponUpgradePurchaseZone : MonoBehaviour
     {
-        PurchaseZone purchaseZone;
+        private PurchaseZone purchaseZone;
 
-        void Awake()
+        private void Awake()
         {
             purchaseZone = GetComponent<PurchaseZone>();
         }
 
-        void Start()
+        private void Start()
         {
             var systemManager = SystemManager.Instance;
-            if (systemManager == null || systemManager.PlayerModel == null) return;
+            if (systemManager == null || systemManager.PlayerModel == null)
+            {
+                Debug.LogError("[WeaponUpgradePurchaseZone] SystemManager / PlayerModel 미초기화 상태로 동작 불가.");
+                return;
+            }
 
             if (systemManager.PlayerStats == null || systemManager.PlayerStats.Stages.Count == 0)
             {
@@ -32,21 +33,16 @@ namespace PrisonLife.Facilities
                 return;
             }
 
-            systemManager.PlayerModel.WeaponUpgradeStage
-                .Subscribe(ApplyStageData)
-                .AddTo(this);
-
             purchaseZone.OnPurchaseCompleted += OnPurchaseCompleted;
-
             UpdateZoneForNextStage();
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             if (purchaseZone != null) purchaseZone.OnPurchaseCompleted -= OnPurchaseCompleted;
         }
 
-        void OnPurchaseCompleted()
+        private void OnPurchaseCompleted()
         {
             var systemManager = SystemManager.Instance;
             if (systemManager == null || systemManager.PlayerModel == null) return;
@@ -55,11 +51,13 @@ namespace PrisonLife.Facilities
             int nextStageIndex = systemManager.PlayerModel.WeaponUpgradeStage.Value + 1;
             if (nextStageIndex >= systemManager.PlayerStats.Stages.Count) return;
 
+            // RP 변경 → PlayerWeaponSystem 이 자동으로 단계 데이터 적용
             systemManager.PlayerModel.WeaponUpgradeStage.Value = nextStageIndex;
+
             UpdateZoneForNextStage();
         }
 
-        void UpdateZoneForNextStage()
+        private void UpdateZoneForNextStage()
         {
             var systemManager = SystemManager.Instance;
             if (systemManager == null || systemManager.PlayerModel == null) return;
@@ -76,34 +74,6 @@ namespace PrisonLife.Facilities
             }
 
             purchaseZone.ResetForNewCost(nextStageData.upgradeCost);
-        }
-
-        void ApplyStageData(int _stageIndex)
-        {
-            var systemManager = SystemManager.Instance;
-            if (systemManager == null) return;
-            if (systemManager.PlayerStats == null) return;
-
-            if (!systemManager.PlayerStats.TryGetStage(_stageIndex, out var stageData)) return;
-
-            var playerModel = systemManager.PlayerModel;
-            if (playerModel != null)
-            {
-                playerModel.MiningSwingDurationSeconds.Value = stageData.swingDurationSeconds;
-                playerModel.MiningHitsPerSwing.Value = stageData.hitsPerSwing;
-                playerModel.MiningRangeWidth.Value = stageData.miningRangeWidth;
-                playerModel.MiningRangeDepth.Value = stageData.miningRangeDepth;
-                if (playerModel.Inventory != null)
-                {
-                    playerModel.Inventory.SetCapacity(ResourceType.Ore, stageData.oreCapacity);
-                }
-            }
-
-            var playerEntity = systemManager.PlayerEntity;
-            if (playerEntity != null)
-            {
-                playerEntity.SetWeaponVisual(stageData.weaponVisualPrefab);
-            }
         }
     }
 }
