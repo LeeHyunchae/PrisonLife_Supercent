@@ -10,11 +10,11 @@ namespace PrisonLife.Facilities
     /// </summary>
     public class HandcuffProductionSystem : IDisposable
     {
-        readonly StockpileModel oreInputStockpile;
-        readonly StockpileModel handcuffOutputStockpile;
-        readonly float productionPeriodSeconds;
-        readonly CancellationToken cancellationToken;
-        bool isRunning;
+        private readonly StockpileModel oreInputStockpile;
+        private readonly StockpileModel handcuffOutputStockpile;
+        private readonly float productionPeriodSeconds;
+        private readonly CancellationToken cancellationToken;
+        private bool isRunning;
 
         public HandcuffProductionSystem(
             StockpileModel _oreInputStockpile,
@@ -41,7 +41,7 @@ namespace PrisonLife.Facilities
             isRunning = false;
         }
 
-        async UniTaskVoid RunProductionLoopAsync()
+        private async UniTaskVoid RunProductionLoopAsync()
         {
             try
             {

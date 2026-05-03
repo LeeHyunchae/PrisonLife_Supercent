@@ -43,7 +43,7 @@ namespace PrisonLife.Controllers.Player
         private void ApplyStageData(int _stageIndex)
         {
             if (statsConfig == null) return;
-            if (!statsConfig.TryGetStage(_stageIndex, out var stageData)) return;
+            if (!statsConfig.TryGetStage(_stageIndex, out WeaponStageData stageData)) return;
 
             playerModel.MiningSwingDurationSeconds.Value = stageData.swingDurationSeconds;
             playerModel.MiningHitsPerSwing.Value = stageData.hitsPerSwing;

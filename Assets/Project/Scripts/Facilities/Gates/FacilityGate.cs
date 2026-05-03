@@ -9,9 +9,10 @@ namespace PrisonLife.Facilities.Gates
     /// </summary>
     public abstract class FacilityGate : IDisposable
     {
-        readonly GameObject gatedFacility;
-        readonly bool playRevealCinematic;
-        bool hasUnlocked;
+        private readonly GameObject gatedFacility;
+        private readonly bool playRevealCinematic;
+        private readonly Transform cinematicFocusOverride;
+        private bool hasUnlocked;
 
         public event Action<FacilityGate> Revealed;
 
@@ -19,10 +20,19 @@ namespace PrisonLife.Facilities.Gates
         public bool PlayRevealCinematic => playRevealCinematic;
         public bool HasUnlocked => hasUnlocked;
 
-        protected FacilityGate(GameObject _gatedFacility, bool _playRevealCinematic)
+        /// <summary>
+        /// 시네마 카메라가 focus 할 대상. override 가 지정되면 그것을, 없으면 gatedFacility 자체를 사용.
+        /// 예: PrisonFullGate 는 gated facility (확장 구매칸) 가 아닌 감옥 본체를 보여줘야 함.
+        /// </summary>
+        public Transform CinematicFocusTarget => cinematicFocusOverride != null
+            ? cinematicFocusOverride
+            : (gatedFacility != null ? gatedFacility.transform : null);
+
+        protected FacilityGate(GameObject _gatedFacility, bool _playRevealCinematic, Transform _cinematicFocusOverride = null)
         {
             gatedFacility = _gatedFacility;
             playRevealCinematic = _playRevealCinematic;
+            cinematicFocusOverride = _cinematicFocusOverride;
         }
 
         public void Initialize()

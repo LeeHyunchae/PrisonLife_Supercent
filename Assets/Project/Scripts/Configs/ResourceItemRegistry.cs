@@ -19,11 +19,11 @@ namespace PrisonLife.Configs
             public GameObject prefab;
         }
 
-        [SerializeField] Entry[] entries;
+        [SerializeField] private Entry[] entries;
 
-        Dictionary<ResourceType, GameObject> prefabByType;
+        private Dictionary<ResourceType, GameObject> prefabByType;
 
-        void EnsureLookup()
+        private void EnsureLookup()
         {
             if (prefabByType != null) return;
             prefabByType = new Dictionary<ResourceType, GameObject>();
@@ -37,12 +37,21 @@ namespace PrisonLife.Configs
         public GameObject GetPrefab(ResourceType _type)
         {
             EnsureLookup();
-            if (!prefabByType.TryGetValue(_type, out var prefab) || prefab == null)
+            if (!prefabByType.TryGetValue(_type, out GameObject prefab) || prefab == null)
             {
                 Debug.LogWarning($"[ResourceItemRegistry] {_type} 의 prefab 등록 안 됨.");
                 return null;
             }
             return prefab;
+        }
+
+        public IReadOnlyDictionary<ResourceType, GameObject> AllPrefabs
+        {
+            get
+            {
+                EnsureLookup();
+                return prefabByType;
+            }
         }
     }
 }

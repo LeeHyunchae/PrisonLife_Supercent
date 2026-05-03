@@ -52,18 +52,19 @@ namespace PrisonLife.Models
             if (Count.Value > clamped) Count.Value = clamped;
         }
 
-        sealed class StockpileSinkAdapter : IResourceSink
+        private sealed class StockpileSinkAdapter : IResourceSink
         {
-            readonly StockpileModel owner;
+            private readonly StockpileModel owner;
             public StockpileSinkAdapter(StockpileModel _owner) { owner = _owner; }
             public ResourceType InputType => owner.ResourceType;
             public bool CanAcceptOne() => owner.HasSpace;
             public bool TryAcceptOne() => owner.TryAdd(1);
+            public Transform AnchorTransform => null;
         }
 
-        sealed class StockpileSourceAdapter : IResourceSource
+        private sealed class StockpileSourceAdapter : IResourceSource
         {
-            readonly StockpileModel owner;
+            private readonly StockpileModel owner;
             public StockpileSourceAdapter(StockpileModel _owner) { owner = _owner; }
             public ResourceType OutputType => owner.ResourceType;
             public bool HasAvailable() => owner.HasStock;

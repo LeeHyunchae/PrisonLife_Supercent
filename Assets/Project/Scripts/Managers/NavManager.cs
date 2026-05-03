@@ -5,7 +5,7 @@ namespace PrisonLife.Managers
 {
     public class NavManager : MonoBehaviour
     {
-        [SerializeField] NavMeshSurface navMeshSurface;
+        [SerializeField] private NavMeshSurface navMeshSurface;
 
         public void RebuildNavMesh()
         {

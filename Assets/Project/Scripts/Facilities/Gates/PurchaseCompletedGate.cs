@@ -8,7 +8,7 @@ namespace PrisonLife.Facilities.Gates
     /// </summary>
     public class PurchaseCompletedGate : FacilityGate
     {
-        readonly PurchaseZone observedPurchaseZone;
+        private readonly PurchaseZone observedPurchaseZone;
 
         public PurchaseCompletedGate(GameObject _gatedFacility, PurchaseZone _observedPurchaseZone, bool _playRevealCinematic = false)
             : base(_gatedFacility, _playRevealCinematic)
@@ -22,7 +22,7 @@ namespace PrisonLife.Facilities.Gates
             observedPurchaseZone.OnPurchaseCompleted += HandleObservedPurchaseCompleted;
         }
 
-        void HandleObservedPurchaseCompleted()
+        private void HandleObservedPurchaseCompleted()
         {
             TryUnlock();
         }

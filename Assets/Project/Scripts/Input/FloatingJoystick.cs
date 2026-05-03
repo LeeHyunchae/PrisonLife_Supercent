@@ -5,17 +5,17 @@ namespace PrisonLife.Input
 {
     public class FloatingJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
     {
-        [SerializeField] RectTransform backgroundRect;
-        [SerializeField] RectTransform handleRect;
-        [SerializeField] float handleMoveRange = 100f;
+        [SerializeField] private RectTransform backgroundRect;
+        [SerializeField] private RectTransform handleRect;
+        [SerializeField] private float handleMoveRange = 100f;
 
-        Vector2 currentNormalizedDirection;
-        bool isCurrentlyActive;
+        private Vector2 currentNormalizedDirection;
+        private bool isCurrentlyActive;
 
         public Vector2 CurrentNormalizedDirection => currentNormalizedDirection;
         public bool IsCurrentlyActive => isCurrentlyActive;
 
-        void Awake()
+        private void Awake()
         {
             if (backgroundRect != null) backgroundRect.gameObject.SetActive(false);
         }

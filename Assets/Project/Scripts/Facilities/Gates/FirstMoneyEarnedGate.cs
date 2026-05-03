@@ -1,6 +1,7 @@
 using System;
 using PrisonLife.Core;
 using PrisonLife.Game;
+using PrisonLife.Models;
 using UnityEngine;
 
 namespace PrisonLife.Facilities.Gates
@@ -18,10 +19,10 @@ namespace PrisonLife.Facilities.Gates
 
         protected override void SubscribeToTrigger()
         {
-            var systemManager = SystemManager.Instance;
+            SystemManager systemManager = SystemManager.Instance;
             if (systemManager == null || systemManager.PlayerModel == null) return;
 
-            var inventory = systemManager.PlayerModel.Inventory;
+            InventoryModel inventory = systemManager.PlayerModel.Inventory;
             if (inventory == null) return;
 
             subscription = inventory.ObserveCount(ResourceType.Money).SubscribeOnChange(_currentMoney =>

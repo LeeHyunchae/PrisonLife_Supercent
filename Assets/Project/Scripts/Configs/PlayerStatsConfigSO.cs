@@ -12,7 +12,7 @@ namespace PrisonLife.Configs
     [CreateAssetMenu(fileName = "PlayerStatsConfig", menuName = "PrisonLife/PlayerStatsConfig")]
     public class PlayerStatsConfigSO : ScriptableObject
     {
-        [SerializeField] List<WeaponStageData> stages = new();
+        [SerializeField] private List<WeaponStageData> stages = new();
 
         public IReadOnlyList<WeaponStageData> Stages => stages;
 

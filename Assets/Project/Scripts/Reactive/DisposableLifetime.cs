@@ -6,7 +6,7 @@ namespace PrisonLife.Reactive
 {
     public class DisposableLifetime : MonoBehaviour
     {
-        readonly List<IDisposable> tracked = new();
+        private readonly List<IDisposable> tracked = new();
 
         public void Add(IDisposable _disposable)
         {
@@ -14,7 +14,7 @@ namespace PrisonLife.Reactive
             tracked.Add(_disposable);
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             for (int i = 0; i < tracked.Count; i++)
             {
@@ -32,7 +32,7 @@ namespace PrisonLife.Reactive
             if (_disposable == null) return null;
             if (_gameObject == null) { _disposable.Dispose(); return _disposable; }
 
-            var lifetime = _gameObject.GetComponent<DisposableLifetime>();
+            DisposableLifetime lifetime = _gameObject.GetComponent<DisposableLifetime>();
             if (lifetime == null) lifetime = _gameObject.AddComponent<DisposableLifetime>();
             lifetime.Add(_disposable);
             return _disposable;

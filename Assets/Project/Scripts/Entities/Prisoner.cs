@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PrisonLife.Controllers.Prisoner;
 using PrisonLife.Models;
 using PrisonLife.Movement;
@@ -9,44 +10,50 @@ using UnityEngine.AI;
 
 namespace PrisonLife.Entities
 {
+    /// <summary>
+    /// 죄수 엔티티. NavMeshAgent 기반 이동.
+    /// spawn → 큐 슬롯 → (수갑 받음) → 셀 경로 waypoint 순서 따라 이동 → cell admit.
+    /// </summary>
     [RequireComponent(typeof(NavMeshAgent))]
     public class Prisoner : MonoBehaviour
     {
         [Header("Visual")]
-        [SerializeField] Renderer bodyRenderer;
-        [SerializeField] Material waitingMaterial;
-        [SerializeField] Material processedMaterial;
-        [SerializeField] TMP_Text requiredCountLabel;
+        [SerializeField] private Renderer bodyRenderer;
+        [SerializeField] private Material waitingMaterial;
+        [SerializeField] private Material processedMaterial;
+        [SerializeField] private TMP_Text requiredCountLabel;
 
         [Header("Movement Tuning")]
-        [SerializeField] float rotationLerpRate = 15f;
+        [SerializeField] private float rotationLerpRate = 15f;
 
-        NavMeshAgent navMeshAgent;
-        PrisonerModel model;
-        NavMeshMover mover;
-        PrisonerSequencer sequencer;
+        private NavMeshAgent navMeshAgent;
+        private PrisonerModel model;
+        private NavMeshMover mover;
+        private PrisonerSequencer sequencer;
 
         public event Action<Prisoner> FullyProcessed;
         public event Action<Prisoner> EnteredCell;
+        public event Action<Prisoner> FirstArrivedAtQueue;
 
         public PrisonerModel Model => model;
         public bool CanReceiveHandcuff => sequencer != null && sequencer.CanReceiveHandcuff;
 
-        void Awake()
+        private void Awake()
         {
             navMeshAgent = GetComponent<NavMeshAgent>();
             navMeshAgent.updateRotation = false;
             navMeshAgent.updatePosition = true;
         }
 
-        public void Init(int _requiredHandcuffs, Transform _initialQueueSlot, Transform _cellTransform)
+        public void Init(int _requiredHandcuffs, Transform _initialQueueSlot, IReadOnlyList<Transform> _cellPathWaypoints)
         {
             model = new PrisonerModel(_requiredHandcuffs);
             mover = new NavMeshMover(navMeshAgent, transform, rotationLerpRate);
-            sequencer = new PrisonerSequencer(model, mover, _initialQueueSlot, _cellTransform);
+            sequencer = new PrisonerSequencer(model, mover, _initialQueueSlot, _cellPathWaypoints);
 
             sequencer.OnFullyProcessed += HandleFullyProcessed;
             sequencer.OnEnteredCell += HandleEnteredCell;
+            sequencer.OnFirstArrivedAtQueue += HandleFirstArrivedAtQueue;
 
             model.Phase
                 .Subscribe(UpdateBodyMaterial)
@@ -67,7 +74,12 @@ namespace PrisonLife.Entities
             sequencer?.ReceiveOneHandcuff();
         }
 
-        void Update()
+        public void OnHandcuffArrived()
+        {
+            sequencer?.OnHandcuffArrived();
+        }
+
+        private void Update()
         {
             sequencer?.Tick(Time.deltaTime);
 
@@ -77,46 +89,53 @@ namespace PrisonLife.Entities
             }
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             if (sequencer != null)
             {
                 sequencer.OnFullyProcessed -= HandleFullyProcessed;
                 sequencer.OnEnteredCell -= HandleEnteredCell;
+                sequencer.OnFirstArrivedAtQueue -= HandleFirstArrivedAtQueue;
             }
         }
 
-        void HandleFullyProcessed()
+        private void HandleFullyProcessed()
         {
             FullyProcessed?.Invoke(this);
         }
 
-        void HandleEnteredCell()
+        private void HandleEnteredCell()
         {
             EnteredCell?.Invoke(this);
         }
 
-        void UpdateBodyMaterial(PrisonerPhase _phase)
+        private void HandleFirstArrivedAtQueue()
+        {
+            FirstArrivedAtQueue?.Invoke(this);
+        }
+
+        private void UpdateBodyMaterial(PrisonerPhase _phase)
         {
             if (bodyRenderer == null) return;
             bool isProcessed = _phase == PrisonerPhase.WalkingToCell || _phase == PrisonerPhase.Inside;
-            var target = isProcessed ? processedMaterial : waitingMaterial;
+            Material target = isProcessed ? processedMaterial : waitingMaterial;
             if (target != null) bodyRenderer.material = target;
         }
 
-        void UpdateRequiredCountLabel(int _received)
+        private void UpdateRequiredCountLabel(int _received)
         {
             if (requiredCountLabel == null || model == null) return;
             requiredCountLabel.text = $"{_received} / {model.RequiredHandcuffs}";
+            requiredCountLabel.gameObject.SetActive(_received < model.RequiredHandcuffs);
         }
 
-        void ApplyRotationTowardsVelocity()
+        private void ApplyRotationTowardsVelocity()
         {
-            var velocity = navMeshAgent.velocity;
-            var horizontal = new Vector3(velocity.x, 0f, velocity.z);
+            Vector3 velocity = navMeshAgent.velocity;
+            Vector3 horizontal = new Vector3(velocity.x, 0f, velocity.z);
             if (horizontal.sqrMagnitude < 0.0001f) return;
 
-            var targetRotation = Quaternion.LookRotation(horizontal.normalized, Vector3.up);
+            Quaternion targetRotation = Quaternion.LookRotation(horizontal.normalized, Vector3.up);
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 targetRotation,

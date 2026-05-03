@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using PrisonLife.Game;
+using PrisonLife.View;
 using UnityEngine;
 
 namespace PrisonLife.Facilities.Gates
@@ -11,24 +14,25 @@ namespace PrisonLife.Facilities.Gates
     public class FacilityGatesController : MonoBehaviour
     {
         [Header("무기 강화 — 첫 돈 획득")]
-        [SerializeField] GameObject weaponUpgradeFacility;
-        [SerializeField] bool weaponUpgradePlayCinematic = true;
+        [SerializeField] private GameObject weaponUpgradeFacility;
+        [SerializeField] private bool weaponUpgradePlayCinematic = true;
 
         [Header("광부 일꾼 — 무기 강화 N단계 도달")]
-        [SerializeField] GameObject minerHireFacility;
-        [SerializeField, Min(1)] int minerHireRequiredStage = 1;
+        [SerializeField] private GameObject minerHireFacility;
+        [SerializeField, Min(1)] private int minerHireRequiredStage = 1;
 
         [Header("죄수 처리 일꾼 — 광부 구매 완료")]
-        [SerializeField] GameObject prisonerWorkerHireFacility;
-        [SerializeField] PurchaseZone minerHirePurchaseZone;
+        [SerializeField] private GameObject prisonerWorkerHireFacility;
+        [SerializeField] private PurchaseZone minerHirePurchaseZone;
 
         [Header("감옥 확장 — 감옥 가득")]
-        [SerializeField] GameObject prisonExpandFacility;
-        [SerializeField] bool prisonExpandPlayCinematic = false;
+        [SerializeField] private GameObject prisonExpandFacility;
+        [SerializeField] private bool prisonExpandPlayCinematic = true;
+        [SerializeField] private Transform prisonFullCinematicFocus;
 
-        readonly List<FacilityGate> gates = new();
+        private readonly List<FacilityGate> gates = new();
 
-        void Awake()
+        private void Awake()
         {
             // 등록된 모든 시설을 시작 시 비활성화 (gate 생성 전이지만 Awake 에서 강제로 끔)
             DisableIfPresent(weaponUpgradeFacility);
@@ -37,7 +41,7 @@ namespace PrisonLife.Facilities.Gates
             DisableIfPresent(prisonExpandFacility);
         }
 
-        void Start()
+        private void Start()
         {
             if (weaponUpgradeFacility != null)
             {
@@ -56,27 +60,38 @@ namespace PrisonLife.Facilities.Gates
 
             if (prisonExpandFacility != null)
             {
-                gates.Add(new PrisonFullGate(prisonExpandFacility, prisonExpandPlayCinematic));
+                gates.Add(new PrisonFullGate(prisonExpandFacility, prisonExpandPlayCinematic, prisonFullCinematicFocus));
             }
 
             for (int i = 0; i < gates.Count; i++)
             {
+                gates[i].Revealed += OnGateRevealed;
                 gates[i].Initialize();
-                // 추후 CameraDirector 가 이 이벤트를 구독해 PlayRevealCinematic == true 인 게이트에 시네마 적용 예정
-                // gates[i].Revealed += OnGateRevealed;
             }
         }
 
-        void OnDestroy()
+        private void OnGateRevealed(FacilityGate _gate)
+        {
+            if (_gate == null || !_gate.PlayRevealCinematic) return;
+            if (_gate.CinematicFocusTarget == null) return;
+
+            CameraDirector director = SystemManager.Instance != null ? SystemManager.Instance.CameraDirector : null;
+            if (director == null) return;
+
+            director.PlayFocusOnAsync(_gate.CinematicFocusTarget).Forget();
+        }
+
+        private void OnDestroy()
         {
             for (int i = 0; i < gates.Count; i++)
             {
+                if (gates[i] != null) gates[i].Revealed -= OnGateRevealed;
                 gates[i]?.Dispose();
             }
             gates.Clear();
         }
 
-        static void DisableIfPresent(GameObject _go)
+        private static void DisableIfPresent(GameObject _go)
         {
             if (_go != null) _go.SetActive(false);
         }

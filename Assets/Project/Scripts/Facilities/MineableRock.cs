@@ -1,62 +1,35 @@
 using System;
-using System.Threading;
-using Cysharp.Threading.Tasks;
 using PrisonLife.Reactive;
 using UnityEngine;
 
 namespace PrisonLife.Facilities
 {
+    /// <summary>
+    /// 단일 광석 노드. 채굴 가능 상태 + 채굴 1회 처리만 담당.
+    /// respawn 타이밍과 그리드 배치는 RockArea 가 관리 (이 클래스는 자기 상태만 관여).
+    /// 파괴 시 GameObject 자체를 SetActive(false) — collider 도 함께 비활성되어 PlayerMiningRange 의 OnTriggerStay 갱신에서 자동 제외.
+    /// </summary>
     public class MineableRock : MonoBehaviour
     {
-        [Header("Mining")]
-        [SerializeField, Min(0.1f)] float respawnDelaySeconds = 4f;
-
-        [Header("Visual")]
-        [SerializeField] GameObject visualRoot;
-
         public ReactiveProperty<bool> IsAvailableForMining { get; } = new(true);
         public Vector3 OreSpawnPosition => transform.position;
 
-        void Awake()
-        {
-            ResetRockToFullState();
-        }
+        public event Action<MineableRock> OnDepleted;
 
-        /// <summary>
-        /// 한 번의 타격 시도. 무기 위력 개념 없이, 가용 상태면 즉시 파괴되고 ore 1개 획득.
-        /// </summary>
         public bool TryDeplete()
         {
             if (!IsAvailableForMining.Value) return false;
-            DepleteAndRespawnAsync(destroyCancellationToken).Forget();
+
+            IsAvailableForMining.Value = false;
+            OnDepleted?.Invoke(this);
+            gameObject.SetActive(false);
             return true;
         }
 
-        async UniTaskVoid DepleteAndRespawnAsync(CancellationToken _cancellationToken)
+        public void ResetToAvailable()
         {
-            IsAvailableForMining.Value = false;
-            if (visualRoot != null) visualRoot.SetActive(false);
-
-            try
-            {
-                await UniTask.Delay(
-                    TimeSpan.FromSeconds(respawnDelaySeconds),
-                    DelayType.DeltaTime,
-                    PlayerLoopTiming.Update,
-                    cancellationToken: _cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-
-            ResetRockToFullState();
-        }
-
-        void ResetRockToFullState()
-        {
+            gameObject.SetActive(true);
             IsAvailableForMining.Value = true;
-            if (visualRoot != null) visualRoot.SetActive(true);
         }
     }
 }

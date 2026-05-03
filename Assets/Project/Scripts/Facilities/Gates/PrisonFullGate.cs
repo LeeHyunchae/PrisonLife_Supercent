@@ -9,14 +9,14 @@ namespace PrisonLife.Facilities.Gates
     /// </summary>
     public class PrisonFullGate : FacilityGate
     {
-        IDisposable subscription;
+        private IDisposable subscription;
 
-        public PrisonFullGate(GameObject _gatedFacility, bool _playRevealCinematic = false)
-            : base(_gatedFacility, _playRevealCinematic) { }
+        public PrisonFullGate(GameObject _gatedFacility, bool _playRevealCinematic = false, Transform _cinematicFocusOverride = null)
+            : base(_gatedFacility, _playRevealCinematic, _cinematicFocusOverride) { }
 
         protected override void SubscribeToTrigger()
         {
-            var systemManager = SystemManager.Instance;
+            SystemManager systemManager = SystemManager.Instance;
             if (systemManager == null || systemManager.Prison == null) return;
 
             subscription = systemManager.Prison.CurrentInmateCount.SubscribeOnChange(_currentInmateCount =>

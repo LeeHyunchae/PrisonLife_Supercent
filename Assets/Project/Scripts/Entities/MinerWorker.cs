@@ -33,7 +33,7 @@ namespace PrisonLife.Entities
             navMeshAgent.updatePosition = true;
         }
 
-        public void Init(IList<MineableRock> _rockPool, IResourceSink _oreSink)
+        public void Init(IReadOnlyList<MineableRock> _rockPool, IResourceSink _oreSink)
         {
             mover = new NavMeshMover(navMeshAgent, transform, rotationLerpRate);
             ai = new MinerWorkerAI(mover, _rockPool, _oreSink, miningDurationSeconds, waitDurationSeconds);
@@ -52,11 +52,11 @@ namespace PrisonLife.Entities
 
         private void ApplyRotationTowardsVelocity()
         {
-            var velocity = navMeshAgent.velocity;
-            var horizontal = new Vector3(velocity.x, 0f, velocity.z);
+            Vector3 velocity = navMeshAgent.velocity;
+            Vector3 horizontal = new Vector3(velocity.x, 0f, velocity.z);
             if (horizontal.sqrMagnitude < 0.0001f) return;
 
-            var targetRotation = Quaternion.LookRotation(horizontal.normalized, Vector3.up);
+            Quaternion targetRotation = Quaternion.LookRotation(horizontal.normalized, Vector3.up);
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 targetRotation,

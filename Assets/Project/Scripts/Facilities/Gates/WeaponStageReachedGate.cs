@@ -10,8 +10,8 @@ namespace PrisonLife.Facilities.Gates
     /// </summary>
     public class WeaponStageReachedGate : FacilityGate
     {
-        readonly int requiredStage;
-        IDisposable subscription;
+        private readonly int requiredStage;
+        private IDisposable subscription;
 
         public WeaponStageReachedGate(GameObject _gatedFacility, int _requiredStage, bool _playRevealCinematic = false)
             : base(_gatedFacility, _playRevealCinematic)
@@ -21,7 +21,7 @@ namespace PrisonLife.Facilities.Gates
 
         protected override void SubscribeToTrigger()
         {
-            var systemManager = SystemManager.Instance;
+            SystemManager systemManager = SystemManager.Instance;
             if (systemManager == null || systemManager.PlayerModel == null) return;
 
             subscription = systemManager.PlayerModel.WeaponUpgradeStage.SubscribeOnChange(_currentStage =>

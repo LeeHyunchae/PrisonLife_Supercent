@@ -7,8 +7,8 @@ namespace PrisonLife.Models
 {
     public class InventoryModel : IInventory
     {
-        readonly Dictionary<ResourceType, ReactiveProperty<int>> countByType = new();
-        readonly Dictionary<ResourceType, ReactiveProperty<int>> capacityByType = new();
+        private readonly Dictionary<ResourceType, ReactiveProperty<int>> countByType = new();
+        private readonly Dictionary<ResourceType, ReactiveProperty<int>> capacityByType = new();
 
         public InventoryModel(IDictionary<ResourceType, int> _initialCapacityByType = null)
         {

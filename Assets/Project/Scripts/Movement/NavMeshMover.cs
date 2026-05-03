@@ -8,9 +8,9 @@ namespace PrisonLife.Movement
 {
     public class NavMeshMover : IMover
     {
-        readonly NavMeshAgent navMeshAgent;
-        readonly Transform actorTransform;
-        readonly float rotationLerpRate;
+        private readonly NavMeshAgent navMeshAgent;
+        private readonly Transform actorTransform;
+        private readonly float rotationLerpRate;
 
         public NavMeshMover(NavMeshAgent _navMeshAgent, Transform _actorTransform, float _rotationLerpRate = 15f)
         {
@@ -78,12 +78,12 @@ namespace PrisonLife.Movement
                 cancellationToken: _cancellationToken);
         }
 
-        void ApplyRotationTowardsDirection(Vector3 _velocityWorldSpace)
+        private void ApplyRotationTowardsDirection(Vector3 _velocityWorldSpace)
         {
-            var lookDirection = new Vector3(_velocityWorldSpace.x, 0f, _velocityWorldSpace.z);
+            Vector3 lookDirection = new Vector3(_velocityWorldSpace.x, 0f, _velocityWorldSpace.z);
             if (lookDirection.sqrMagnitude < 0.0001f) return;
 
-            var targetRotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
+            Quaternion targetRotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
             actorTransform.rotation = Quaternion.Slerp(
                 actorTransform.rotation,
                 targetRotation,

@@ -6,9 +6,9 @@ namespace PrisonLife.Controllers.Player
 {
     public class PlayerMovementSystem
     {
-        readonly PlayerModel playerModel;
-        readonly IMover mover;
-        Transform cachedCameraTransform;
+        private readonly PlayerModel playerModel;
+        private readonly IMover mover;
+        private Transform cachedCameraTransform;
 
         public PlayerMovementSystem(PlayerModel _playerModel, IMover _mover)
         {
@@ -31,7 +31,7 @@ namespace PrisonLife.Controllers.Player
             mover.SetVelocity(worldVelocity);
         }
 
-        Vector3 ConvertJoystickToCameraRelativeDirection(Vector2 _joystickInput)
+        private Vector3 ConvertJoystickToCameraRelativeDirection(Vector2 _joystickInput)
         {
             if (cachedCameraTransform == null && Camera.main != null)
             {

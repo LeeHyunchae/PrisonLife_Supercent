@@ -5,9 +5,9 @@ namespace PrisonLife.Reactive
 {
     public class ReactiveProperty<T>
     {
-        T currentValue;
-        readonly List<Action<T>> subscribers = new();
-        readonly IEqualityComparer<T> comparer;
+        private T currentValue;
+        private readonly List<Action<T>> subscribers = new();
+        private readonly IEqualityComparer<T> comparer;
 
         public ReactiveProperty(T _initialValue = default, IEqualityComparer<T> _comparer = null)
         {
@@ -41,7 +41,7 @@ namespace PrisonLife.Reactive
             return SubscribeInternal(_onChanged, _invokeImmediately: false);
         }
 
-        IDisposable SubscribeInternal(Action<T> _onChanged, bool _invokeImmediately)
+        private IDisposable SubscribeInternal(Action<T> _onChanged, bool _invokeImmediately)
         {
             if (_onChanged == null) throw new ArgumentNullException(nameof(_onChanged));
             subscribers.Add(_onChanged);
@@ -49,24 +49,24 @@ namespace PrisonLife.Reactive
             return new Subscription(this, _onChanged);
         }
 
-        void Unsubscribe(Action<T> _handler)
+        private void Unsubscribe(Action<T> _handler)
         {
             subscribers.Remove(_handler);
         }
 
-        void NotifySubscribers()
+        private void NotifySubscribers()
         {
-            var snapshot = subscribers.ToArray();
+            Action<T>[] snapshot = subscribers.ToArray();
             for (int i = 0; i < snapshot.Length; i++)
             {
                 snapshot[i]?.Invoke(currentValue);
             }
         }
 
-        sealed class Subscription : IDisposable
+        private sealed class Subscription : IDisposable
         {
-            ReactiveProperty<T> owner;
-            Action<T> handler;
+            private ReactiveProperty<T> owner;
+            private Action<T> handler;
 
             public Subscription(ReactiveProperty<T> _owner, Action<T> _handler)
             {

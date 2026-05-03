@@ -8,14 +8,17 @@ namespace PrisonLife.View
     /// </summary>
     public class CameraFollow : MonoBehaviour
     {
-        [SerializeField] Transform target;
-        [SerializeField] Vector3 worldOffsetFromTarget = new Vector3(0f, 12f, -8f);
-        [SerializeField, Min(0.01f)] float smoothTimeSeconds = 0.25f;
-        [SerializeField] bool snapToTargetOnStart = true;
+        [SerializeField] private Transform target;
+        [SerializeField] private Vector3 worldOffsetFromTarget = new Vector3(0f, 12f, -8f);
+        [SerializeField, Min(0.01f)] private float smoothTimeSeconds = 0.25f;
+        [SerializeField] private bool snapToTargetOnStart = true;
 
-        Vector3 currentSmoothVelocity;
+        public Transform Target => target;
+        public Vector3 WorldOffsetFromTarget => worldOffsetFromTarget;
 
-        void Start()
+        private Vector3 currentSmoothVelocity;
+
+        private void Start()
         {
             if (target == null) return;
             if (snapToTargetOnStart)
@@ -24,7 +27,7 @@ namespace PrisonLife.View
             }
         }
 
-        void LateUpdate()
+        private void LateUpdate()
         {
             if (target == null) return;
 

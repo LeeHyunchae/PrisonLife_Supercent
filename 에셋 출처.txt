@@ -1,0 +1,19 @@
+[ 사용 에셋 출처 ]
+
+본 프로젝트는 아래의 무료 에셋을 사용하였습니다.
+
+────────────────────────────────────────
+
+1. 3D 모델
+   - 출처: Tripo
+   - 링크: https://studio.tripo3d.ai/
+
+2. 애니메이션
+   - 출처: Mixamo (Adobe)
+   - 링크: https://www.mixamo.com/#
+
+3. 사운드
+   - 출처: FREE Casual Game SFX Pack (Unity Asset Store)
+   - 링크: https://assetstore.unity.com/packages/audio/sound-fx/free-casual-game-sfx-pack-54116
+
+────────────────────────────────────────

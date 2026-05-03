@@ -9,16 +9,16 @@ namespace PrisonLife.View
     /// </summary>
     public class FaceCameraBillboard : MonoBehaviour
     {
-        [SerializeField] Camera targetCamera;
+        [SerializeField] private Camera targetCamera;
 
-        Transform cachedCameraTransform;
+        private Transform cachedCameraTransform;
 
-        void Start()
+        private void Start()
         {
             EnsureCameraTransform();
         }
 
-        void LateUpdate()
+        private void LateUpdate()
         {
             if (cachedCameraTransform == null)
             {
@@ -29,7 +29,7 @@ namespace PrisonLife.View
             transform.rotation = cachedCameraTransform.rotation;
         }
 
-        void EnsureCameraTransform()
+        private void EnsureCameraTransform()
         {
             if (targetCamera != null)
             {

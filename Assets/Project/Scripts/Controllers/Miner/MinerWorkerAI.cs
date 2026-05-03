@@ -11,6 +11,9 @@ namespace PrisonLife.Controllers.Miner
     /// </summary>
     public class MinerWorkerAI
     {
+        // 가장 가까운 N 개 후보 중 무작위 picking — 광부 다수가 동시에 같은 광석으로 몰리는 시각적 어색함 완화.
+        private const int ClosestCandidatePoolSize = 3;
+
         private enum State
         {
             Wait,
@@ -20,10 +23,13 @@ namespace PrisonLife.Controllers.Miner
         }
 
         private readonly IMover mover;
-        private readonly IList<MineableRock> rockPool;
+        private readonly IReadOnlyList<MineableRock> rockPool;
         private readonly IResourceSink oreSink;
         private readonly float miningDurationSeconds;
         private readonly float waitDurationSeconds;
+
+        // 정렬용 재사용 버퍼 (매 picking 마다 new 안 하게 GC 절약).
+        private readonly List<(MineableRock Rock, float SqrDistance)> closestCandidatesBuffer = new();
 
         private State state;
         private MineableRock targetRock;
@@ -31,7 +37,7 @@ namespace PrisonLife.Controllers.Miner
 
         public MinerWorkerAI(
             IMover _mover,
-            IList<MineableRock> _rockPool,
+            IReadOnlyList<MineableRock> _rockPool,
             IResourceSink _oreSink,
             float _miningDurationSeconds = 0.7f,
             float _waitDurationSeconds = 0.3f)
@@ -67,7 +73,7 @@ namespace PrisonLife.Controllers.Miner
             stateTimer += _deltaTime;
             if (stateTimer < waitDurationSeconds) return;
 
-            var rock = PickRandomAvailableRock();
+            MineableRock rock = PickClosestAvailableRock();
             if (rock == null)
             {
                 stateTimer = 0f;
@@ -132,18 +138,38 @@ namespace PrisonLife.Controllers.Miner
             state = State.Wait;
         }
 
-        private MineableRock PickRandomAvailableRock()
+        private MineableRock PickClosestAvailableRock()
         {
             if (rockPool == null || rockPool.Count == 0) return null;
 
-            int startIndex = Random.Range(0, rockPool.Count);
+            Vector3 currentPosition = mover != null ? mover.CurrentPosition : Vector3.zero;
+
+            closestCandidatesBuffer.Clear();
             for (int i = 0; i < rockPool.Count; i++)
             {
-                int idx = (startIndex + i) % rockPool.Count;
-                var rock = rockPool[idx];
-                if (rock != null && rock.IsAvailableForMining.Value) return rock;
+                MineableRock candidate = rockPool[i];
+                if (candidate == null) continue;
+                if (!candidate.IsAvailableForMining.Value) continue;
+
+                float sqrDistanceToCandidate = (candidate.transform.position - currentPosition).sqrMagnitude;
+                closestCandidatesBuffer.Add((candidate, sqrDistanceToCandidate));
             }
-            return null;
+
+            if (closestCandidatesBuffer.Count == 0) return null;
+
+            // 가까운 순 정렬 후 상위 N 개 중 무작위 — 여러 광부가 동시에 같은 광석으로 몰리는 현상 완화.
+            closestCandidatesBuffer.Sort(CompareByDistanceAscending);
+
+            int candidatePoolSize = Mathf.Min(ClosestCandidatePoolSize, closestCandidatesBuffer.Count);
+            int pickIndex = Random.Range(0, candidatePoolSize);
+            return closestCandidatesBuffer[pickIndex].Rock;
+        }
+
+        private static int CompareByDistanceAscending(
+            (MineableRock Rock, float SqrDistance) _a,
+            (MineableRock Rock, float SqrDistance) _b)
+        {
+            return _a.SqrDistance.CompareTo(_b.SqrDistance);
         }
     }
 }

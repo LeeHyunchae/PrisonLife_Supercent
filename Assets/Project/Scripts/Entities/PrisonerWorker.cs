@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using PrisonLife.Controllers.PrisonerWorker;
 using PrisonLife.Core;
 using PrisonLife.Game;
+using PrisonLife.Managers;
 using PrisonLife.Models;
 using PrisonLife.Movement;
 using PrisonLife.View.World;
@@ -34,6 +35,8 @@ namespace PrisonLife.Entities
         private StackVisualizer handcuffStackVisualizer;
 
         public InventoryModel Inventory => inventory;
+        public Transform Transform => transform;
+        public bool IsPlayerControlled => false;
 
         private void Awake()
         {
@@ -43,11 +46,13 @@ namespace PrisonLife.Entities
         }
 
         public void Init(
-            Transform _handcuffOutputZoneTransform,
-            Transform _prisonerProcessZoneTransform,
-            StockpileModel _handcuffStockpile)
+            Transform _containerOutputZoneTransform,
+            StockpileModel _containerHandcuffStockpile,
+            Transform _inputZoneTransform,
+            StockpileModel _inputZoneBufferStockpile,
+            Transform _processZoneTransform)
         {
-            var capacities = new Dictionary<ResourceType, int>
+            Dictionary<ResourceType, int> capacities = new Dictionary<ResourceType, int>
             {
                 { ResourceType.Handcuff, handcuffCapacity },
             };
@@ -58,16 +63,20 @@ namespace PrisonLife.Entities
             ai = new PrisonerWorkerAI(
                 this,
                 mover,
-                _handcuffOutputZoneTransform,
-                _prisonerProcessZoneTransform,
-                _handcuffStockpile);
+                _containerOutputZoneTransform,
+                _containerHandcuffStockpile,
+                _inputZoneTransform,
+                _inputZoneBufferStockpile,
+                _processZoneTransform);
 
-            var registry = SystemManager.Instance != null ? SystemManager.Instance.ResourceItems : null;
+            SystemManager systemManager = SystemManager.Instance;
+            PoolManager pool = systemManager != null ? systemManager.Pool : null;
             handcuffStackVisualizer = new StackVisualizer(
                 inventory.ObserveCount(ResourceType.Handcuff),
                 handStackAnchor,
-                registry != null ? registry.GetPrefab(ResourceType.Handcuff) : null,
-                handcuffStackOffsetStep);
+                ResourceType.Handcuff,
+                handcuffStackOffsetStep,
+                pool);
 
             ai.Start();
         }
@@ -90,11 +99,11 @@ namespace PrisonLife.Entities
 
         private void ApplyRotationTowardsVelocity()
         {
-            var velocity = navMeshAgent.velocity;
-            var horizontal = new Vector3(velocity.x, 0f, velocity.z);
+            Vector3 velocity = navMeshAgent.velocity;
+            Vector3 horizontal = new Vector3(velocity.x, 0f, velocity.z);
             if (horizontal.sqrMagnitude < 0.0001f) return;
 
-            var targetRotation = Quaternion.LookRotation(horizontal.normalized, Vector3.up);
+            Quaternion targetRotation = Quaternion.LookRotation(horizontal.normalized, Vector3.up);
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 targetRotation,

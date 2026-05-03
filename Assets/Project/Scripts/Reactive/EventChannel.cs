@@ -5,7 +5,7 @@ namespace PrisonLife.Reactive
 {
     public class EventChannel<T>
     {
-        readonly List<Action<T>> subscribers = new();
+        private readonly List<Action<T>> subscribers = new();
 
         public IDisposable Subscribe(Action<T> _handler)
         {
@@ -16,22 +16,22 @@ namespace PrisonLife.Reactive
 
         public void Raise(T _payload)
         {
-            var snapshot = subscribers.ToArray();
+            Action<T>[] snapshot = subscribers.ToArray();
             for (int i = 0; i < snapshot.Length; i++)
             {
                 snapshot[i]?.Invoke(_payload);
             }
         }
 
-        void Unsubscribe(Action<T> _handler)
+        private void Unsubscribe(Action<T> _handler)
         {
             subscribers.Remove(_handler);
         }
 
-        sealed class Subscription : IDisposable
+        private sealed class Subscription : IDisposable
         {
-            EventChannel<T> owner;
-            Action<T> handler;
+            private EventChannel<T> owner;
+            private Action<T> handler;
 
             public Subscription(EventChannel<T> _owner, Action<T> _handler)
             {
@@ -50,7 +50,7 @@ namespace PrisonLife.Reactive
 
     public class EventChannel
     {
-        readonly List<Action> subscribers = new();
+        private readonly List<Action> subscribers = new();
 
         public IDisposable Subscribe(Action _handler)
         {
@@ -61,22 +61,22 @@ namespace PrisonLife.Reactive
 
         public void Raise()
         {
-            var snapshot = subscribers.ToArray();
+            Action[] snapshot = subscribers.ToArray();
             for (int i = 0; i < snapshot.Length; i++)
             {
                 snapshot[i]?.Invoke();
             }
         }
 
-        void Unsubscribe(Action _handler)
+        private void Unsubscribe(Action _handler)
         {
             subscribers.Remove(_handler);
         }
 
-        sealed class Subscription : IDisposable
+        private sealed class Subscription : IDisposable
         {
-            EventChannel owner;
-            Action handler;
+            private EventChannel owner;
+            private Action handler;
 
             public Subscription(EventChannel _owner, Action _handler)
             {

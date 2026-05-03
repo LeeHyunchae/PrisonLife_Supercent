@@ -1,5 +1,6 @@
 using PrisonLife.Core;
 using PrisonLife.Game;
+using PrisonLife.Managers;
 using PrisonLife.Models;
 using PrisonLife.View.World;
 using UnityEngine;
@@ -14,33 +15,36 @@ namespace PrisonLife.Facilities
     [RequireComponent(typeof(ResourceOutputZone))]
     public class MoneyOutput : MonoBehaviour
     {
-        [Header("Capacity")]
-        [SerializeField, Min(1)] int initialMaxStorage = 50;
+        // 머니 stockpile 최대치 (won 단위) — 코드 상수.
+        private const int InitialMaxStorage = 100;
 
         [Header("Stack Offset")]
-        [SerializeField] Vector3 moneyStackOffsetStep = new Vector3(0f, 0.1f, 0f);
+        [SerializeField] private Vector3 moneyStackOffsetStep = new Vector3(0f, 0.1f, 0f);
 
         public StockpileModel MoneyStockpile { get; private set; }
 
-        ResourceOutputZone siblingOutputZone;
-        StackVisualizer moneyStockVisualizer;
+        private ResourceOutputZone siblingOutputZone;
+        private StackVisualizer moneyStockVisualizer;
 
-        void Awake()
+        private void Awake()
         {
-            MoneyStockpile = new StockpileModel(ResourceType.Money, initialMaxStorage);
+            MoneyStockpile = new StockpileModel(ResourceType.Money, InitialMaxStorage);
             siblingOutputZone = GetComponent<ResourceOutputZone>();
         }
 
-        void Start()
+        private void Start()
         {
             if (siblingOutputZone != null) siblingOutputZone.Init(MoneyStockpile.Source);
 
-            var registry = SystemManager.Instance != null ? SystemManager.Instance.ResourceItems : null;
+            SystemManager systemManager = SystemManager.Instance;
+            PoolManager pool = systemManager != null ? systemManager.Pool : null;
             moneyStockVisualizer = new StackVisualizer(
                 MoneyStockpile.Count,
                 transform,
-                registry != null ? registry.GetPrefab(ResourceType.Money) : null,
-                moneyStackOffsetStep);
+                ResourceType.Money,
+                moneyStackOffsetStep,
+                pool,
+                GameValueConstants.MoneyValuePerItem);
         }
 
         public void AddMoney(int _amount)
@@ -48,7 +52,7 @@ namespace PrisonLife.Facilities
             MoneyStockpile?.TryAdd(_amount);
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             moneyStockVisualizer?.Dispose();
             moneyStockVisualizer = null;

@@ -1,30 +1,51 @@
 using System.Collections.Generic;
 using PrisonLife.Core;
+using PrisonLife.Game;
+using PrisonLife.Managers;
+using PrisonLife.Models;
 using UnityEngine;
 
 namespace PrisonLife.Facilities
 {
     /// <summary>
     /// 자원 보유자 → 시설 방향 트리거 존. transferIntervalSeconds 마다 1개 이동.
-    /// 시설 측은 IResourceSink 를 통해 receive 한다.
+    /// source 측 즉시 차감 + 비행 시각효과 → 도착 시 sink 가 +1 (ItemFlowManager.Fly).
     /// </summary>
     [RequireComponent(typeof(BoxCollider))]
     [RequireComponent(typeof(Rigidbody))]
     public class ResourceInputZone : MonoBehaviour
     {
-        [SerializeField] ResourceType resourceType;
-        [SerializeField, Min(0.02f)] float transferIntervalSeconds = 0.1f;
+        [Header("Resource")]
+        [SerializeField] private ResourceType resourceType;
+        [SerializeField, Min(0.02f)] private float transferIntervalSeconds = 0.1f;
 
-        BoxCollider triggerBoxCollider;
-        Rigidbody kinematicRigidbody;
-        IResourceSink sink;
+        [Header("Flight Effect")]
+        [SerializeField, Min(0.05f)] private float flightDurationSeconds = 0.25f;
+        [SerializeField, Min(0f)] private float flightArcHeight = 1.0f;
+        [SerializeField] private Vector3 holderFlightOriginOffset = new Vector3(0f, 1.0f, 0f);
 
-        readonly HashSet<IInventoryHolder> holdersInZone = new();
-        readonly Dictionary<Collider, IInventoryHolder> colliderToHolderCache = new();
+        [Header("Sound")]
+        [SerializeField] private SoundType depositSoundType = SoundType.None;
 
-        float transferAccumulator;
+        // 자원 종류별 flight throttle — Money 는 5원당 1지폐, 그 외는 1:1.
+        private int FlightUnitInterval => resourceType == ResourceType.Money ? GameValueConstants.MoneyValuePerItem : 1;
 
-        void Awake()
+        // Money 자원은 1원씩 빠르게 빠지는 효과를 위해 짧은 주기 사용.
+        private float ResolvedTransferIntervalSeconds => resourceType == ResourceType.Money
+            ? GameValueConstants.MoneyTransferIntervalSeconds
+            : transferIntervalSeconds;
+
+        private BoxCollider triggerBoxCollider;
+        private Rigidbody kinematicRigidbody;
+        private IResourceSink sink;
+
+        private readonly HashSet<IInventoryHolder> holdersInZone = new();
+        private readonly Dictionary<Collider, IInventoryHolder> colliderToHolderCache = new();
+
+        private float transferAccumulator;
+        private int flightAccumulator;
+
+        private void Awake()
         {
             triggerBoxCollider = GetComponent<BoxCollider>();
             triggerBoxCollider.isTrigger = true;
@@ -53,53 +74,87 @@ namespace PrisonLife.Facilities
             sink = _sink;
         }
 
-        void OnTriggerEnter(Collider _other)
+        private void OnTriggerEnter(Collider _other)
         {
-            var holder = ResolveInventoryHolder(_other);
+            IInventoryHolder holder = ResolveInventoryHolder(_other);
             if (holder == null) return;
             holdersInZone.Add(holder);
         }
 
-        void OnTriggerExit(Collider _other)
+        private void OnTriggerExit(Collider _other)
         {
-            if (!colliderToHolderCache.TryGetValue(_other, out var holder)) return;
+            if (!colliderToHolderCache.TryGetValue(_other, out IInventoryHolder holder)) return;
             holdersInZone.Remove(holder);
             colliderToHolderCache.Remove(_other);
         }
 
-        void Update()
+        private void Update()
         {
             if (sink == null) return;
             if (holdersInZone.Count == 0) return;
 
             transferAccumulator += Time.deltaTime;
-            if (transferAccumulator < transferIntervalSeconds) return;
+            if (transferAccumulator < ResolvedTransferIntervalSeconds) return;
             transferAccumulator = 0f;
 
-            foreach (var holder in holdersInZone)
+            foreach (IInventoryHolder holder in holdersInZone)
             {
                 if (holder == null) continue;
-                var inventory = holder.Inventory;
+                InventoryModel inventory = holder.Inventory;
                 if (inventory == null) continue;
                 if (inventory.GetCount(resourceType) <= 0) continue;
                 if (!sink.CanAcceptOne()) return;
 
-                if (inventory.TryRemove(resourceType, 1))
+                if (!inventory.TryRemove(resourceType, 1)) continue;
+                sink.TryAcceptOne();
+
+                flightAccumulator++;
+                if (flightAccumulator >= FlightUnitInterval)
                 {
-                    sink.TryAcceptOne();
+                    flightAccumulator = 0;
+                    PlayDepositSound();
+                    LaunchFlightDecoration(holder);
                 }
+                return;
             }
         }
 
-        IInventoryHolder ResolveInventoryHolder(Collider _collider)
+        private void LaunchFlightDecoration(IInventoryHolder _holder)
+        {
+            // model 업데이트는 즉시 완료한 상태 — 비행은 순수 시각 효과 (도착 시점 부수효과 없음).
+            ItemFlowManager flow = SystemManager.Instance != null ? SystemManager.Instance.ItemFlow : null;
+            if (flow == null) return;
+
+            Vector3 fromPosition = _holder.Transform != null
+                ? _holder.Transform.position + holderFlightOriginOffset
+                : transform.position;
+            Vector3 toPosition = transform.position;
+
+            flow.Fly(
+                resourceType,
+                fromPosition,
+                toPosition,
+                flightDurationSeconds,
+                flightArcHeight,
+                null);
+        }
+
+        private IInventoryHolder ResolveInventoryHolder(Collider _collider)
         {
             if (_collider == null) return null;
-            if (colliderToHolderCache.TryGetValue(_collider, out var cached)) return cached;
+            if (colliderToHolderCache.TryGetValue(_collider, out IInventoryHolder cached)) return cached;
 
-            var direct = _collider.GetComponent<IInventoryHolder>();
-            var holder = direct ?? _collider.GetComponentInParent<IInventoryHolder>();
+            IInventoryHolder direct = _collider.GetComponent<IInventoryHolder>();
+            IInventoryHolder holder = direct != null ? direct : _collider.GetComponentInParent<IInventoryHolder>();
             colliderToHolderCache[_collider] = holder;
             return holder;
+        }
+
+        private void PlayDepositSound()
+        {
+            if (depositSoundType == SoundType.None) return;
+            SoundManager sound = SystemManager.Instance != null ? SystemManager.Instance.Sound : null;
+            sound?.PlayOneShot(depositSoundType);
         }
     }
 }
